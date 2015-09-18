@@ -28,29 +28,44 @@ pkgHC <- function(){
 
 #' Start Personality Insights (PI)
 #'
-#' ---NOTE: For Windows user only---. Start PI server and don't wait for anything to finish.  After using this, the user needs to remember to run stopPI() to stop server.
-#' @keywords node.js start server
+#' ---NOTE: For Windows and Linux user only---. Start PI server and don't wait for anything to finish.  After using this, the user needs to remember to run stopPI() to stop server.
+#' @keywords win7 linux node.js start server
 #' @export
 #' @examples
 #' startPI(x="C:/local_path_to_watson-developer-cloud/personality-insights-nodejs")
 startPI <- function(x){
-	cat("\n Starting Node.js...")
-	cat("\n Please wait for about 5-10 seconds and don't forget to run stopPI() function when you are done with your batches. \n")
-	# Start PI server and don't wait for anything to finish
-	system(paste("C:/Windows/system32/cmd.exe /c cd ", x, " & node app.js", sep=""), wait=FALSE)
+	if(Sys.info()['sysname']=="Windows"){
+		cat("\n Starting Node.js...")
+		cat("\n Please wait for about 5-10 seconds and don't forget to run stopPI() function when you are done with your batches. \n")
+		# Start PI server and don't wait for anything to finish
+		system(paste("C:/Windows/system32/cmd.exe /c cd ", x, " & node app.js", sep=""), wait=FALSE)
+	}
+	if(Sys.info()['sysname']=="Linux"){
+		cat("\n Starting Node.js...")
+		cat("\n Please wait for about 5-10 seconds and don't forget to run stopPI() function when you are done with your batches. \n")
+		# Start PI server and don't wait for anything to finish
+		system(paste("cd ", x, " && node app.js", sep=""), wait=FALSE, ignore.stdout=TRUE)
+	}
 }
 
 #' Stop Personality Insights (PI)
 #'
-#' ---NOTE: For Windows user only---. Kill PI server by filtering to image name and prompt output whether the kill was successful or not.  Note that this will only work on Win7 of above where the "taskkill" command is available.  Also, the user will get feedback when the server has been fully stop.
-#' @keywords win7 taskkill stop server
+#' ---NOTE: For Windows and Linux user only---. Kill PI server by filtering to image name and prompt output whether the kill was successful or not.  Note that this will only work on Win7 of above where the "taskkill" command is available and on Linux where "pkill" conmand is available.
+#' @keywords win7 linux taskkill stop server
 #' @export
 #' @examples
 #' stopPI()
 stopPI <- function(){
-	# Kill PI server by filtering to image name and prompt output
-	# whether the kill was successful or not
-	system("taskkill /F /IM node.exe", intern=FALSE)
+	if(Sys.info()['sysname']=="Windows"){
+		# Kill PI server by filtering to image name and prompt output
+		# whether the kill was successful or not
+		system("taskkill /F /IM node.exe", intern=FALSE)
+	}
+	if(Sys.info()['sysname']=="Linux"){
+		# Kill PI server by filtering to image name and prompt output
+		# whether the kill was successful or not
+		system("pkill node", intern=FALSE)
+	}
 }
 
 #' Clean Text fields
@@ -131,7 +146,7 @@ getPI <- function(url, x, dump, ssl=FALSE){
 				# progress is being made in the loop
 				pb <- txtProgressBar(min=1, max=length(x), style=3) #style=3 would allow to see the percent and no new lines would be added while it loops through
 				setTxtProgressBar(pb, i)
-				Sys.sleep(runif(1, 2, 5)) #randomly put the system to sleep after each URL is being fetched - between 2 to 5 seconds
+				Sys.sleep(runif(1, 1, 2)) #randomly put the system to sleep after each URL is being fetched - between 1 to 2 seconds
 				# perform a system clean-up by removing the user name and password from the vector
 				# once all of the variables have been counted for
 				if(i==length(x)){
@@ -158,7 +173,7 @@ getPI <- function(url, x, dump, ssl=FALSE){
 				# progress is being made in the loop
 				pb <- txtProgressBar(min=1, max=length(x), style=3) #style=3 would allow to see the percent and no new lines would be added while it loops through
 				setTxtProgressBar(pb, i)
-				Sys.sleep(runif(1, 2, 5)) #randomly put the system to sleep after each URL is being fetched - between 2 to 5 seconds
+				Sys.sleep(runif(1, 1, 2)) #randomly put the system to sleep after each URL is being fetched - between 1 to 2 seconds
 				# perform a system clean-up by removing the user name and password from the vector
 				# once all of the variables have been counted for
 				if(i==length(x)){

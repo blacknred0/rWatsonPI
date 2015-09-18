@@ -2,5 +2,4 @@ TODO
 -Reorder project folders and and dumps
 -Write better documentation on how to setup environment
 -Update field names prior or exporting CSV
--Allow other OS besides Windows to start and stop their own local PI server instance
 -Update "selMeaningfulRecs()" to call columns to be processed rather than location
