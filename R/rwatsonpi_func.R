@@ -50,8 +50,8 @@ startPI <- function(x){
 
 #' Stop Personality Insights (PI)
 #'
-#' ---NOTE: For Windows and Linux user only---. Kill PI server by filtering to image name and prompt output whether the kill was successful or not.  Note that this will only work on Win7 of above where the "taskkill" command is available and on Linux where "pkill" conmand is available.
-#' @keywords win7 linux taskkill stop server
+#' ---NOTE: For Windows and Linux user only---. Kill PI server by filtering to image name and prompt output whether the kill was successful or not.  Note that this will only work on Win7 of above where the "taskkill" command is available and on Linux where "pkill" command is available.
+#' @keywords win7 linux taskkill pkill stop server
 #' @export
 #' @examples
 #' stopPI()
@@ -68,7 +68,7 @@ stopPI <- function(){
 	}
 }
 
-#' Clean Text fields
+#' Clean text fields
 #'
 #' Clean text field so there are less issues when posting the data to PI.  This function will only leaves letters and numbers and remove multiple and trailing spaces and characters that are now UTF-8.
 #' @param x would be the field that wanted to be formatted.
@@ -188,7 +188,71 @@ getPI <- function(url, x, dump, ssl=FALSE){
 	}
 	
 	return(dump)
-} #fget
+} #dump
+
+#' Get PI data results 2
+#'
+#' This function will post the data from R into PI as JSON format and store it back to R by using CURL natively from the system.
+#' CURL will need to be installed and configured properly (specially on Windows) to make sure that the queries run successfully.
+#' User will have the capability of encrypting with server (which it is not default).  This would have to be enable since the script is configured to be run with Node.js locally.
+#' @keywords download pi native curl
+#' @export
+#' @examples
+#' new.x1 <- getPI2(url="http://www.example.com", x=data$field, dump=NULL) # store results into new var x2
+#' new.x2 <- getPI2(url="https://www.example.com", x=data$field, dump=NULL, ssl=TRUE) # store results into new var x2, but information is encrypted with server
+#' new.x3 <- getPI2(url="https://www.example.com", x=data$field, dump=NULL, win=TRUE) # store results into new var x3 and using windows
+#' new.x4 <- getPI2(url="https://www.example.com", x=data$field, dump=NULL, win=TRUE, capath="C:/pathtoca/cacert.pem") # store results into new var x4 and using windows
+getPI2 <- function(url, x, usr, pwd, dump, ssl=FALSE, win=FALSE, capath){
+	dump = NULL;
+	
+	if(ssl==FALSE & substring(url, 0, 5)=="https"){
+		cat("\n This is an encrypted connection, but you did not identify by using ssl=TRUE on function. Will continue insecurely. \n")
+		for (i in 1:length(x)){
+			if(win==TRUE){
+				dump[i] <- system(paste('C:/Windows/system32/cmd.exe /c curl --insecure -s -X POST -u ', usr, ':', pwd, ' -H "Content-Type: text/plain" -d "', x[i], '" ', url, sep=""), intern=TRUE) #send command to curl insecurely. Do not record progress.
+			}
+			if(win==FALSE){
+				dump[i] <- system(paste('curl --insecure -s -X POST -u ', usr, ':', pwd, ' -H "Content-Type: text/plain" -d "', x[i], '" ', url, sep=""), intern=TRUE) #send command to curl insecurely. Do not record progress.
+			}
+			# progress is being made in the loop
+			pb <- txtProgressBar(min=1, max=length(x), style=3) #style=3 would allow to see the percent and no new lines would be added while it loops through
+			setTxtProgressBar(pb, i)
+			Sys.sleep(runif(1, 0.5, 1)) #randomly put the system to sleep after each URL is being fetched - between 0.5 to 1 seconds
+			# perform a system clean-up by removing the user name and password from the vector
+			# once all of the variables have been counted for
+			if(i==length(x)){
+				close(pb); remove(pb) # close and remove the progress bar connection
+				cat("\n Done fetching remote and unencrypted. \n")
+			}
+		}
+	}
+	else{
+		if(win==TRUE & capath==""){
+			stop("\n When using Windows, need to identify path to certificate authority. \n")
+		}
+		for (i in 1:length(x)){
+			if(win==TRUE & capath!=""){
+				dump[i] <- system(paste('C:/Windows/system32/cmd.exe /c curl --cacert ', capath, ' -s -X POST -u ', usr, ':', pwd, ' -H "Content-Type: text/plain" -d "', x[i], '" ', url, sep=""), intern=TRUE) #send command to curl securely. Do not record progress.
+			}
+			if(win==FALSE){
+				dump[i] <- system(paste('curl -s -X POST -u ', usr, ':', pwd, ' -H "Content-Type: text/plain" -d "', x[i], '" ', url, sep=""), intern=TRUE) # send command to curl securely. Do not record progress.
+			}
+			
+			# progress is being made in the loop
+			pb <- txtProgressBar(min=1, max=length(x), style=3) #style=3 would allow to see the percent and no new lines would be added while it loops through
+			setTxtProgressBar(pb, i)
+			Sys.sleep(runif(1, 0.5, 1)) #randomly put the system to sleep after each URL is being fetched - between 0.5 to 1 seconds
+			# perform a system clean-up by removing the user name and password from the vector
+			# once all of the variables have been counted for
+			if(i==length(x)){
+				close(pb); remove(pb) # close and remove the progress bar connection
+				cat("\n Done fetching remote and encrypted.\n")
+			}
+		}
+	}
+	
+	return(dump)
+} #dump
 
 #' Format JSON field
 #'
@@ -224,5 +288,5 @@ exportPI <- function(x){
 		else{
 			write.table(fromJSON(x[i]), paste("system_u", ".csv", sep=""), sep=",", row.names=FALSE, append=TRUE, col.names=FALSE) #append data and don't include column names
 		}
-	} #write.csv(fget[1], "system_u_debug.csv")
+	}
 }
