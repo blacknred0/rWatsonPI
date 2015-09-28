@@ -5,8 +5,8 @@ Authors@R: person("Irving", "Duran", , "irving.duran@gmail.com", role = c("aut",
 Description: Load unstructured data to Personality Insights (PI) via post Multipart/Form-data by interacting with PI API.  Such an interaction will be posted on JSON format and then stored back into R on the same format as well.  User will have the capabilities of reformatting the JSON file into a CSV and exporting such results for analysis. Copyright 2015 IBM Corp. All Rights Reserved., Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
 Depends: R (>= 2.15.0)
 Imports:
-    plyr,
-	RCurl,
-	rjson
+    RCurl,
+	rjson,
+	plyr
 License: Apache License 2.0
 LazyData: true

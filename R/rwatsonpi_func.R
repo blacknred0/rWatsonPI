@@ -15,6 +15,7 @@
 #'
 #' This function runs proper packages install if they don't exist on the library and then load those packages.
 #' @keywords package install healthchecks
+#' @import plyr
 #' @export
 #' @examples
 #' pkgHC()
@@ -96,6 +97,7 @@ clnTxt <- function(x) {
 #' This will produce two new vars, df.sel and df.notsel, where df.sel will be the records that meet the criteria and df.notsel would be the records that did not meet criteria.  At this point the user should be able to do a write.table() and export those records and do it manually where applicable.
 #' @param x would be the field that wanted to be formatted.
 #' @keywords clean text field
+#' @import textcat
 #' @export
 #' @examples
 #' selMeaningfulRecs(x, x$txt)
@@ -125,6 +127,7 @@ selMeaningfulRecs <- function(x, txt) {
 #' This function will post the data from R into PI as JSON format and store it back to R.
 #' User will have the capability of encrypting with server (which it is not default).  This would have to be enable since the script is configured to be run with Node.js locally.
 #' @keywords download pi rcurl
+#' @import RCurl
 #' @export
 #' @examples
 #' new.x1 <- getPI(url="http://www.example.com", x=data$field, dump=NULL) # store results into new var x2
@@ -196,6 +199,7 @@ getPI <- function(url, x, dump, ssl=FALSE){
 #' CURL will need to be installed and configured properly (specially on Windows) to make sure that the queries run successfully.
 #' User will have the capability of encrypting with server (which it is not default).  This would have to be enable since the script is configured to be run with Node.js locally.
 #' @keywords download pi native curl
+#' @import RCurl
 #' @export
 #' @examples
 #' new.x1 <- getPI2(url="http://www.example.com", x=data$field, dump=NULL) # store results into new var x2
@@ -276,6 +280,7 @@ fmtJSON <- function(x, pname){
 #'
 #' This function will export the clean JSON vector into a CSV file.
 #' @keywords json csv clean
+#' @import rjson
 #' @export
 #' @examples
 #' exportPI(x) # create CSV based on x
