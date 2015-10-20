@@ -20,7 +20,7 @@
 #' @examples
 #' pkgHC()
 pkgHC <- function(){
-	pkgs <- c("plyr", "RCurl", "rjson", "textcat") #update this section with the required packages
+	pkgs <- c("plyr", "RCurl", "jsonlite", "textcat") #update this section with the required packages
 	npkgs <- pkgs[!(pkgs %in% installed.packages()[,"Package"])] #check library if package is not installed
 	if(length(npkgs)) install.packages(npkgs, dependencies=TRUE, repos="http://cran.us.r-project.org") #if it is not installed, then install package with dependencies
 	
@@ -95,13 +95,14 @@ clnTxt <- function(x) {
 #' Too many words .... greater than 10k.  These could be run manually in the tool instead of using RCURL as there is a max limitation  AND
 #' The records need to be in English in order to fully be process through Watson PI.
 #' This will produce two new vars, df.sel and df.notsel, where df.sel will be the records that meet the criteria and df.notsel would be the records that did not meet criteria.  At this point the user should be able to do a write.table() and export those records and do it manually where applicable.
+#' Keep will be the columns that you would like to keep once selection is processed.
 #' @param x would be the field that wanted to be formatted.
 #' @keywords clean text field
 #' @import textcat
 #' @export
 #' @examples
-#' selMeaningfulRecs(x, x$txt)
-selMeaningfulRecs <- function(x, txt) {
+#' selMeaningfulRecs(x, x$txt, keep=c("var1", "var2", "var3"))
+selMeaningfulRecs <- function(x, txt, keep) {
 	x$wcl <- ifelse(sapply(gregexpr("\\W+", txt), length) + 1 > 325, TRUE, FALSE) # count of word per record and if greater than 325, mark as true
 	x$wcg <- ifelse(sapply(gregexpr("\\W+", txt), length) + 1 < 10000, TRUE, FALSE) # count of word per record and if less than 10000, mark as true
 	x$lang <- textcat(txt) # get text nearest language
@@ -110,11 +111,11 @@ selMeaningfulRecs <- function(x, txt) {
 	for(i in 1:length(txt)){
 		if(x$wcl[i]==TRUE & x$wcg[i]==TRUE & x$le[i]==TRUE){
 			xs <- x[ which(x$wcl==TRUE & x$wcg==TRUE & x$le==TRUE), ] # only select those records where the count of words are greater than 325 and less than 10000 and the text is mostly in english
-			df.sel <<- xs[, 1:2] # only select needed columns
+			df.sel <<- xs[, keep] # only select needed columns
 		}
 		else{
 			xns <- x[ which(x$wcl==FALSE | x$wcg==FALSE | x$le==FALSE), ] # only select those records where the count of words are not greater than 325 or less than 10000 or not mostly in english
-			df.notsel <<- xns[, 1:2] # only select needed columns
+			df.notsel <<- xns[, keep] # only select needed columns
 		}
 	}
 	
@@ -149,7 +150,7 @@ getPI <- function(url, x, dump, ssl=FALSE){
 				# progress is being made in the loop
 				pb <- txtProgressBar(min=1, max=length(x), style=3) #style=3 would allow to see the percent and no new lines would be added while it loops through
 				setTxtProgressBar(pb, i)
-				Sys.sleep(runif(1, 1, 2)) #randomly put the system to sleep after each URL is being fetched - between 1 to 2 seconds
+				Sys.sleep(0.5) #put the system to sleep after each URL is being fetched
 				# perform a system clean-up by removing the user name and password from the vector
 				# once all of the variables have been counted for
 				if(i==length(x)){
@@ -176,7 +177,7 @@ getPI <- function(url, x, dump, ssl=FALSE){
 				# progress is being made in the loop
 				pb <- txtProgressBar(min=1, max=length(x), style=3) #style=3 would allow to see the percent and no new lines would be added while it loops through
 				setTxtProgressBar(pb, i)
-				Sys.sleep(runif(1, 1, 2)) #randomly put the system to sleep after each URL is being fetched - between 1 to 2 seconds
+				Sys.sleep(0.5) #put the system to sleep after each URL is being fetched
 				# perform a system clean-up by removing the user name and password from the vector
 				# once all of the variables have been counted for
 				if(i==length(x)){
@@ -221,7 +222,7 @@ getPI2 <- function(url, x, usr, pwd, dump, ssl=FALSE, win=FALSE, capath){
 			# progress is being made in the loop
 			pb <- txtProgressBar(min=1, max=length(x), style=3) #style=3 would allow to see the percent and no new lines would be added while it loops through
 			setTxtProgressBar(pb, i)
-			Sys.sleep(runif(1, 0.5, 1)) #randomly put the system to sleep after each URL is being fetched - between 0.5 to 1 seconds
+			Sys.sleep(0.5) #put the system to sleep after each URL is being fetched
 			# perform a system clean-up by removing the user name and password from the vector
 			# once all of the variables have been counted for
 			if(i==length(x)){
@@ -245,7 +246,7 @@ getPI2 <- function(url, x, usr, pwd, dump, ssl=FALSE, win=FALSE, capath){
 			# progress is being made in the loop
 			pb <- txtProgressBar(min=1, max=length(x), style=3) #style=3 would allow to see the percent and no new lines would be added while it loops through
 			setTxtProgressBar(pb, i)
-			Sys.sleep(runif(1, 0.5, 1)) #randomly put the system to sleep after each URL is being fetched - between 0.5 to 1 seconds
+			Sys.sleep(0.5) #put the system to sleep after each URL is being fetched
 			# perform a system clean-up by removing the user name and password from the vector
 			# once all of the variables have been counted for
 			if(i==length(x)){
@@ -280,18 +281,59 @@ fmtJSON <- function(x, pname){
 #'
 #' This function will export the clean JSON vector into a CSV file.
 #' @keywords json csv clean
-#' @import rjson
+#' @import jsonlite
 #' @export
 #' @examples
-#' exportPI(x) # create CSV based on x
-exportPI <- function(x){
-	# export by grouping all of the variables at once
-	for (i in 1:length(x)){
-		if(i==1){
-			write.table(fromJSON(x[i]), paste("system_u", ".csv", sep=""), sep=",", row.names=FALSE, append=FALSE) #export the data on a csv format
+#' exportPI(data, json, file_output) #create CSV based on data and json
+exportPI <- function(data, json, output){
+	#load variables names
+	pinames <- c("Openness", "Conscientiousness", "Extraversion", "Agreeableness",
+				"Neuroticism", "Adventurousness", "Artistic interests", "Emotionality",
+				"Imagination", "Intellect", "Liberalism", "Achievement striving", "Cautiousness",
+				"Dutifulness", "Orderliness", "Self-discipline", "Self-efficacy", "Activity level",
+				"Assertiveness", "Cheerfulness", "Excitement-seeking", 
+				"Friendliness", "Gregariousness", "Altruism", "Cooperation", "Modesty", 
+				"Morality", "Sympathy", "Trust", "Anger", "Anxiety", "Depression", 
+				"Immoderation", "Self-consciousness", "Vulnerability", "Challenge", "Closeness", "Curiosity",
+				"Excitement", "Harmony", "Ideal", "Liberty", "Love", "Practicality",
+				"Self-expression", "Stability", "Structure", "Conservation", "Openness to change",
+				"Hedonism", "Self-enhancement", "Self-transcendence")
+	
+	#loop through each json string
+	#reused on Oct 10, 2015 -> https://github.com/IBMPredictiveAnalytics/Watson-Personality-Insights/blob/master/Source%20code/script.r
+	for(q in 1:length(json)){
+		res <- fromJSON(json[q])
+
+		if(length(res)==2){
+			dump <- rep(NA,52)
+		} 
+		else{ 
+			wc <- res$word_count #get word count variable
+			res <- res$tree$children #get main variables from PI results
+			dump <- NULL
+			for(i in 1:length(res)){
+				a <- res$children[[i]]
+				for(j in 1:length(a$children)){
+					b <- a$children[[j]]
+					dump <- c(dump,b$percentage)
+					for (k in 1:length(b$children)){
+						c <- b$children[[k]]
+						dump <- c(dump,c$percentage)
+					}
+				}
+			}
+		}
+		t <- rbind.data.frame(dump) #convert vector to df
+		t <- as.data.frame(c(wc, t)) #attach word count var to df
+		dd <- cbind(data[q, ], t) #select current json loop and attach calc results
+		colnames(dd) <- c(colnames(data), "word_count", pinames) #rename columns to proper names
+		
+		#do output
+		if(q==1){
+			write.table(dd, paste(output, ".csv", sep=""), sep=",", row.names=FALSE, append=FALSE) #export the data on a csv format	
 		}
 		else{
-			write.table(fromJSON(x[i]), paste("system_u", ".csv", sep=""), sep=",", row.names=FALSE, append=TRUE, col.names=FALSE) #append data and don't include column names
+			write.table(dd, paste(output, ".csv", sep=""), sep=",", row.names=FALSE, append=TRUE, col.names=FALSE) #append data and don't include column names
 		}
 	}
 }

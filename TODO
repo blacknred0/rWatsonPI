@@ -1,4 +1,2 @@
 TODO
--Update field names prior or exporting CSV
--Update "selMeaningfulRecs()" to call columns to be processed rather than location
 -"getPI2()" function for Windows is not properly fetching when invoking curl with capath
