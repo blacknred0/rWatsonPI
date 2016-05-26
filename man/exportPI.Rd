@@ -4,13 +4,13 @@
 \alias{exportPI}
 \title{Export PI data to CSV}
 \usage{
-exportPI(x)
+exportPI(data, json, output)
 }
 \description{
 This function will export the clean JSON vector into a CSV file.
 }
 \examples{
-exportPI(x) # create CSV based on x
+exportPI(data, json, file_output) #create CSV based on data and json
 }
 \keyword{clean}
 \keyword{csv}

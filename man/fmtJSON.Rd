@@ -10,7 +10,7 @@ fmtJSON(x, pname)
 \item{x}{would be the field that wanted to be formatted.}
 }
 \description{
-This function will format JSON field by making it uniform and removing "word_count_message".  This is a result form PI if the word count is too low.  It will also add the person name from the data frame.
+This function will format JSON field by making it uniform and removing "warnings" and "word_count_message".  This is a result form PI if the word count is too low.  It will also add the person name from the data frame.
 }
 \examples{
 clean.json <- fmtJSON(x, pname="Joe Doe") # Format JSON by adding person name

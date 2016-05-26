@@ -4,7 +4,7 @@
 \alias{selMeaningfulRecs}
 \title{Select meaningful records}
 \usage{
-selMeaningfulRecs(x, txt)
+selMeaningfulRecs(x, txt, keep)
 }
 \arguments{
 \item{x}{would be the field that wanted to be formatted.}
@@ -16,9 +16,10 @@ The input you provided matched X words from our lexicon, we require 70 matching 
 Too many words .... greater than 10k.  These could be run manually in the tool instead of using RCURL as there is a max limitation  AND
 The records need to be in English in order to fully be process through Watson PI.
 This will produce two new vars, df.sel and df.notsel, where df.sel will be the records that meet the criteria and df.notsel would be the records that did not meet criteria.  At this point the user should be able to do a write.table() and export those records and do it manually where applicable.
+Keep will be the columns that you would like to keep once selection is processed.
 }
 \examples{
-selMeaningfulRecs(x, x$txt)
+selMeaningfulRecs(x, x$txt, keep=c("var1", "var2", "var3"))
 }
 \keyword{clean}
 \keyword{field}
