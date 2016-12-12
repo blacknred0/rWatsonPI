@@ -210,7 +210,27 @@ getPI <- function(url, x, dump, ssl=FALSE){
 getPI2 <- function(url, x, usr, pwd, dump, ssl=FALSE, win=FALSE, capath){
 	dump = NULL;
 
-	if(ssl==FALSE & substring(url, 0, 5)=="https"){
+	if(url=="https://gateway.watsonplatform.net/personality-insights/api/v2/profile"){
+		for (i in 1:length(x)){
+			if(win==TRUE){
+				dump[i] <- system(paste('C:/Windows/system32/cmd.exe /c curl -s -X POST -u ', usr, ':', pwd, ' -H "Content-Type: text/plain" -d "', x[i], '" ', url, sep=""), intern=TRUE) #send command to curl securely. Do not record progress.
+			}
+			if(win==FALSE){
+				dump[i] <- system(paste('curl -s -X POST -u ', usr, ':', pwd, ' -H "Content-Type: text/plain" -d "', x[i], '" ', url, sep=""), intern=TRUE) #send command to curl securely. Do not record progress.
+			}
+			# progress is being made in the loop
+			pb <- txtProgressBar(min=1, max=length(x), style=3) #style=3 would allow to see the percent and no new lines would be added while it loops through
+			setTxtProgressBar(pb, i)
+			Sys.sleep(0.1) #put the system to sleep after each URL is being fetched
+			# perform a system clean-up by removing the user name and password from the vector
+			# once all of the variables have been counted for
+			if(i==length(x)){
+				close(pb); remove(pb) # close and remove the progress bar connection
+				cat("\n Done fetching remote. \n")
+			}
+		}
+	}
+	else if(ssl==FALSE & substring(url, 0, 5)=="https"){
 		cat("\n This is an encrypted connection, but you did not identify by using ssl=TRUE on function. Will continue insecurely. \n")
 		for (i in 1:length(x)){
 			if(win==TRUE){
@@ -305,7 +325,12 @@ exportPI <- function(data, json, output){
 	for(q in 1:length(json)){
 		res <- fromJSON(json[q])
 
-		if(length(res)==2){
+		#check if var="error" is found on res, then set data frame to be blank for export
+		if("error" %in% names(res)==TRUE){
+			dump <- rep(NA,52)
+			wc <- NA
+		}
+		else if(length(res)==2){
 			dump <- rep(NA,52)
 		}
 		else{
@@ -329,12 +354,15 @@ exportPI <- function(data, json, output){
 		dd <- cbind(data[q, ], t) #select current json loop and attach calc results
 		colnames(dd) <- c(colnames(data), "word_count", pinames) #rename columns to proper names
 
-		#do output
-		if(q==1){
+		#do output if word_count is not NA
+		if(q==1 & is.na(dd$word_count)!=TRUE){
 			write.table(dd, paste(output, ".csv", sep=""), sep=",", row.names=FALSE, append=FALSE) #export the data on a csv format
 		}
-		else{
+		else if(q>1 & is.na(dd$word_count)!=TRUE){
 			write.table(dd, paste(output, ".csv", sep=""), sep=",", row.names=FALSE, append=TRUE, col.names=FALSE) #append data and don't include column names
+		}
+		else{
+			#nothing
 		}
 	}
 }
